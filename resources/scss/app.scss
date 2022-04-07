@@ -1,4 +1,7 @@
 @import './variables';
+@import '~noty/src/noty.scss';
+@import '~noty/src/themes/mint.scss';
+
 
 body{
     font-family: 'Indie FLower' ,sans-serif;
@@ -40,6 +43,9 @@ section.main{
         background: $primary;
         border-color: $pure;
         color: $pure;
+    }
+    &:focus{
+        outline: none;
     }
 
     transition: $smooth;
@@ -87,4 +93,9 @@ section.register{
             color: $primary-hover;
         }
     }
+}
+
+.noty_theme__mint{
+    border-radius: 50px!important;
+    padding-left: 8px!important;
 }
