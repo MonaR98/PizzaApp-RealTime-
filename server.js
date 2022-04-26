@@ -13,6 +13,9 @@ const session = require('express-session');
 const flash = require('express-flash');
 const MongoStore=require('connect-mongo');
 const passport = require('passport');
+const emitter = require('events');
+
+
 //Database Connection
 const url='mongodb://localhost/pizza-app';
 mongoose.connect(url,{useUnifiedTopology:true, 
@@ -37,6 +40,9 @@ let mongoStore = MongoStore.create({
                      collectionName:'sessions',
                 })
 
+//Event emmitter
+const eventEmitter =new emitter();
+app.set('eventEmitter', eventEmitter); //by binding this eventemitter with our app like we did here, we can use this event anywhere in the app
 //session config
 app.use(session({
    // secret: process.env.COOKIE_SECRET,
@@ -53,6 +59,7 @@ app.use(session({
 
 //Passposrt config and it shoud be done right after session config
 const passportInit = require('./app/config/passport');
+const { Socket } = require('socket.io');
 passportInit(passport);
 app.use(passport.initialize());
 app.use(passport.session())
@@ -84,6 +91,24 @@ require('./routes/web')(app);
 
 
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`Listening on port no ${PORT}`)
+})
+
+//socket
+
+const io = require('socket.io')(server);
+io.on('connection',(socket) => {
+    //Join
+    socket.on('join', (roomName) => { //here join is the name of the event which was emitted by the client i.e. in the app.js file@line no 81 
+        socket.join(roomName)  //here, this join is the method of socket to create a room for communication
+    })
+})
+
+eventEmitter.on('orderUpdated', (data)=>{
+    io.to(`order_${data.id}`).emit('orderUpdated', data)
+})
+
+eventEmitter.on('orderPlaced',(data)=>{
+    io.to('adminRoom').emit('orderPlaced', data)
 })

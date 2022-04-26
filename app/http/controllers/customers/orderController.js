@@ -31,14 +31,30 @@ function orderController () {
             })
 
             order.save().then(result=>{
-                req.flash('success','Order placed successfully!');
+                Order.populate(result, { path: 'customerId' }, (err, placedOrder)=>{
+                    req.flash('success','Order placed successfully!');
                 delete req.session.cart;
-                return res.redirect('/customer/orders')
-            }).catch(error=>{
+                //emit event
+                const eventEitter = req.app.get('eventEmitter');
+                eventEitter.emit('orderPlaced', placedOrder);
+                return res.redirect('/customer/orders');
+                })
+               }).catch(error =>{
                 req.flash('error','Something went wrong');
                 return res.redirect('/cart');
             })
 
+        },
+
+        async show(req,res){
+            const order = await Order.findById(req.params.id);//Here the 'id' is same as defined in the route for this method, i.e.'app.get('/customer/orders/:id',auth, orderController().show)' line of web.js file.
+            //Authourize user
+            if(req.user._id.toString() === order.customerId.toString()){
+               return res.render('customers/singleOrder', { order: order })
+            }
+            return res.redirect('/')
+
+             
         }
     }   
 }
